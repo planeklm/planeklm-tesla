@@ -1,6 +1,4 @@
-# planeklm's Tesla HUD
-
-# WIP
+# planeklm's Tesla HUD - WIP
 
 # Features
 * **Autopilot** - The vehicle will automatically drive to the chosen waypoint, with updates seen on the HUD.
@@ -13,7 +11,7 @@
 
 # Dependencies
 [interact-sound](https://github.com/qbcore-framework/interact-sound)\
-[ox_lib](https://github.com/overextended/ox_lib)\
+[ox_lib](https://github.com/overextended/ox_lib)
 
 # Credits
-[planeklm (KLM)](https://github.com/planeklm)\
+[planeklm (KLM)](https://github.com/planeklm)

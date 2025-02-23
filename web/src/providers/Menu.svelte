@@ -2,7 +2,6 @@
     import { crossfade } from 'svelte/transition';
     export const [send, receive] = crossfade({ duration: 500 });
     import Icon from '@iconify/svelte';
-    import { VISIBILITY } from '../stores/stores';
     import { SendEvent, ReceiveEvent } from '@utils/eventsHandlers';
     import { onDestroy } from 'svelte';
 
@@ -52,18 +51,20 @@
     ReceiveEvent<number>('updateSpeed', speedHandler);
 
     ReceiveEvent<string>('updateBlinkers', (state: string) => {
-        if (state == '0') {
-            leftBlinker = false;
-            rightBlinker = false;
-        } else if (state == '1') {
-            leftBlinker = true;
-            rightBlinker = false;
-        } else if (state == '2') {
-            leftBlinker = false;
-            rightBlinker = true;
-        } else {
-            leftBlinker = true;
-            rightBlinker = true;
+        switch (state) {
+            case '0':
+                leftBlinker = rightBlinker = false;
+                break;
+            case '1':
+                leftBlinker = true;
+                rightBlinker = false;
+                break;
+            case '2':
+                leftBlinker = false;
+                rightBlinker = true;
+                break;
+            default:
+                leftBlinker = rightBlinker = true;
         }
     });
 
@@ -124,11 +125,8 @@
                     <p class="text-black text-lg font-semibold">
                         {batteryLevel}%
                     </p>
-                    <p class="text-black text-lg font-semibold">D</p>
+                    <p class="text-black text-lg font-semibold">{gear}</p>
                     {#if isAutoPilotActive}
-                        <p class="text-black text-lg font-semibold">
-                            Trip Time:
-                        </p>
                         <p class="text-black text-xl">
                             {formatTime(tripTime)}
                         </p>

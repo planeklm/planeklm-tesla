@@ -1,11 +1,9 @@
 local updateInterval = 250
 local detectionInterval = 500
-local blinkerInterval = 500
-local batteryUpdateInterval = 10000
+local interval = 500
 local isInVehicle = false
 local lastSpeed = 0
 local carAhead = false
-local lastBatteryLevel = 75
 
 local function toggleUI(bool)
     --SetNuiFocus(bool, bool) -- for debug
@@ -26,41 +24,50 @@ local function getVehicleSpeed(veh)
     end
 end
 
-local function getVehicleBatteryLevel(vehicle)
-    if lastBatteryLevel > 0 and GetEntitySpeed(vehicle) > 1.0 then
-        lastBatteryLevel = math.max(0, lastBatteryLevel - math.random(0, 2) * 0.1)
-    end
-    return math.floor(lastBatteryLevel + 0.5)
-end
-
 Citizen.CreateThread(function()
+    local playerPed = PlayerPedId()
+    local inVehicle = IsPedInAnyVehicle(playerPed, false)
     local nextBlinkerUpdate = 0
     local nextGearUpdate = 0
+    local nextBatteryUpdate = 0
     local blinkerState = 0
     local gearState = 0
+    local batteryState = 0
 
     while true do
-        if isInVehicle then
+        if inVehicle then
             local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
             local curTime = GetGameTimer()
 
+            -- battery updates
+            if curTime > nextBatteryUpdate then
+                local newBatteryState = GetVehicleFuelLevel(vehicle)
+                if newBatteryState ~= batteryState then
+                    batteryState = newBatteryState
+                    SendNUIEvent("updateBattery", { math.floor(GetVehicleFuelLevel(vehicle)) })
+                end
+                nextBatteryUpdate = curTime + interval
+            end
+
+            -- gear updates
             if curTime > nextGearUpdate then
                 local newGearState = GetVehicleCurrentGear(vehicle)
                 if newGearState ~= gearState then
                     gearState = newGearState
                     SendNUIEvent("updateGears", { GetVehicleCurrentGear(vehicle) })
                 end
-                nextGearUpdate = curTime + 200
+                nextGearUpdate = curTime + interval
             end
 
+            -- blinker updates
             if curTime > nextBlinkerUpdate then
                 local newBlinkerState = GetVehicleIndicatorLights(vehicle)
                 if newBlinkerState ~= blinkerState then
                     blinkerState = newBlinkerState
+                    print(GetVehicleIndicatorLights(vehicle))
                     SendNUIEvent("updateBlinkers", { GetVehicleIndicatorLights(vehicle) })
                 end
-
-                nextBlinkerUpdate = curTime + blinkerInterval
+                nextBlinkerUpdate = curTime + interval
             end
             Citizen.Wait(100)
         else
@@ -72,7 +79,6 @@ end)
 Citizen.CreateThread(function()
     local nextSpeedUpdate = 0
     local nextDetectionUpdate = 0
-    local nextBatteryUpdate = 0
 
     while true do
         local wait = 1000
@@ -98,12 +104,6 @@ Citizen.CreateThread(function()
                 end
 
                 nextSpeedUpdate = currentTime + updateInterval
-            end
-
-            if currentTime > nextBatteryUpdate then
-                local batteryLevel = getVehicleBatteryLevel(vehicle)
-                SendNUIEvent("updateBattery", batteryLevel)
-                nextBatteryUpdate = currentTime + batteryUpdateInterval
             end
 
             if currentTime > nextDetectionUpdate then

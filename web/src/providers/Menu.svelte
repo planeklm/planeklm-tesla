@@ -1,19 +1,18 @@
 <script lang="ts">
-    import { crossfade, fade, fly } from 'svelte/transition';
-    import { quintIn, quintOut, sineOut } from 'svelte/easing';
+    import { crossfade, fade } from 'svelte/transition';
     export const [send, receive] = crossfade({ duration: 1000 });
     import Icon from '@iconify/svelte';
-    import { SendEvent, ReceiveEvent } from '@utils/eventsHandlers';
+    import { ReceiveEvent } from '@utils/eventsHandlers';
     import { onDestroy } from 'svelte';
 
     let isCarAhead = false;
     let speed = 0;
     let gear = 'D';
-    let batteryLevel = 60; // Default battery level
+    let batteryLevel = 0;
     let leftBlinker = false;
     let rightBlinker = false;
     let blinkerVisible = true;
-    let isVisible = true; // Track visibility for transition
+    let isVisible = true;
 
     let blinkerInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -57,21 +56,15 @@
 
     ReceiveEvent<number>('updateSpeed', speedHandler);
 
-    ReceiveEvent<number>('updateBlinkers', (state: number) => {
-        switch (state) {
-            case 0:
-                leftBlinker = rightBlinker = false;
-                break;
-            case 1:
-                leftBlinker = true;
-                rightBlinker = false;
-                break;
-            case 2:
-                leftBlinker = false;
-                rightBlinker = true;
-                break;
-            default:
-                leftBlinker = rightBlinker = true;
+    ReceiveEvent<string>('updateBlinkers', (state: string) => {
+        if (state == '0') {
+            leftBlinker = rightBlinker = false;
+        } else if (state == '1') {
+            leftBlinker = true;
+            rightBlinker = false;
+        } else if (state == '2') {
+            leftBlinker = false;
+            rightBlinker = true;
         }
     });
 

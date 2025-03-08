@@ -4,7 +4,7 @@
 * **Autopilot** - The vehicle will automatically drive to the chosen waypoint, with updates seen on the HUD.
 * **Automatic Car Detection** - Vehicles will automatically be detected and displayed on the HUD.
 * **Time to Waypoint** - Calculates the amount of time it will take via autopilot to arrive at the waypoint.
-* **More Soon** - TBA.
+* **And more!**
 
 # Installation
 * Drag and drop `planeklm-tesla`

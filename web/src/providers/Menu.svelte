@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { crossfade } from 'svelte/transition';
-    export const [send, receive] = crossfade({ duration: 500 });
+    import { crossfade, fade, fly } from 'svelte/transition';
+    import { quintIn, quintOut, sineOut } from 'svelte/easing';
+    export const [send, receive] = crossfade({ duration: 1000 });
     import Icon from '@iconify/svelte';
     import { SendEvent, ReceiveEvent } from '@utils/eventsHandlers';
     import { onDestroy } from 'svelte';
@@ -8,10 +9,11 @@
     let isCarAhead = false;
     let speed = 0;
     let gear = 'D';
-    let batteryLevel = 25;
+    let batteryLevel = 60; // Default battery level
     let leftBlinker = false;
     let rightBlinker = false;
     let blinkerVisible = true;
+    let isVisible = true; // Track visibility for transition
 
     let blinkerInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -47,24 +49,37 @@
         }, 100) as unknown as number;
     };
 
-    ReceiveEvent<boolean>('setVisible', visibilityHandler);
+    ReceiveEvent<boolean>('setMenuVisible', (bool: boolean) => {
+        isVisible = bool;
+    });
+
+    ReceiveEvent<boolean>('setCarAheadVisible', visibilityHandler);
+
     ReceiveEvent<number>('updateSpeed', speedHandler);
 
-    ReceiveEvent<string>('updateBlinkers', (state: string) => {
+    ReceiveEvent<number>('updateBlinkers', (state: number) => {
         switch (state) {
-            case '0':
+            case 0:
                 leftBlinker = rightBlinker = false;
                 break;
-            case '1':
+            case 1:
                 leftBlinker = true;
                 rightBlinker = false;
                 break;
-            case '2':
+            case 2:
                 leftBlinker = false;
                 rightBlinker = true;
                 break;
             default:
                 leftBlinker = rightBlinker = true;
+        }
+    });
+
+    ReceiveEvent<number>('updateGears', (state: number) => {
+        if (state == 0) {
+            gear = 'R';
+        } else if (state <= 1) {
+            gear = 'D';
         }
     });
 
@@ -87,6 +102,12 @@
         return `${hours}h ${minutes}m ${secs}s`;
     }
 
+    function getBatteryColor(level: number): string {
+        if (level <= 20) return '#FF5252';
+        if (level <= 50) return '#FFC107';
+        return '#4CAF50';
+    }
+
     ReceiveEvent<boolean>('autopilotStatus', (status: boolean) => {
         isAutoPilotActive = status;
         if (!status) tripTime = 0;
@@ -97,11 +118,13 @@
     });
 </script>
 
-<div class="grid">
-    <div class="items-center justify-center">
-        <div
-            class="fixed bottom-4 right-4 bg-[#fbfafb] rounded-3xl shadow-md w-[300px] h-[320px] p-4"
-        >
+{#if isVisible}
+    <div
+        class="fixed bottom-4 right-4 w-[300px] h-[320px]"
+        in:fade={{ duration: 300, delay: 400 }}
+        out:fade={{ duration: 300 }}
+    >
+        <div class="bg-[#fbfafb] rounded-3xl shadow-md w-full h-full p-4">
             <div class="text-center mt-4">
                 <h1 class="text-black text-7xl font-bold">{speed}</h1>
                 <p class="text-black text-lg font-bold mt-1">KM/H</p>
@@ -121,10 +144,26 @@
                         icon="mdi:arrow-right-bold"
                     />
                 </div>
-                <div class="flex justify-center gap-4 mt-4 font-semibold">
-                    <p class="text-black text-lg font-semibold">
+                <div class="flex justify-center items-center gap-2 mt-4">
+                    <div
+                        class="w-24 h-4 bg-gray-200 rounded-full overflow-hidden"
+                    >
+                        <div
+                            class="h-full rounded-full"
+                            style="width: {batteryLevel}%; background-color: {getBatteryColor(
+                                batteryLevel,
+                            )}"
+                        ></div>
+                    </div>
+                    <p
+                        class="text-black text-lg font-semibold"
+                        style="color: {getBatteryColor(batteryLevel)}"
+                    >
                         {batteryLevel}%
                     </p>
+                </div>
+
+                <div class="flex justify-center gap-4 mt-2 font-semibold">
                     <p class="text-black text-lg font-semibold">{gear}</p>
                     {#if isAutoPilotActive}
                         <p class="text-black text-xl">
@@ -134,7 +173,7 @@
                         <p class="text-black text-lg">AP Inactive</p>
                     {/if}
                 </div>
-                <div class="relative h-60 w-60 mx-auto mt-6 mb-4">
+                <div class="relative h-60 w-60 mx-auto mt-4 mb-4">
                     {#if isCarAhead && isAutoPilotActive}
                         <img
                             class="absolute inset-0 w-full h-full object-contain"
@@ -164,13 +203,4 @@
             </div>
         </div>
     </div>
-    <!--
-    <div class="items-center justify-center">
-        <div
-            class="fixed bottom-4 right-[325px] bg-[#fbfafb] rounded-3xl shadow-md w-[200px] h-[320px] p-4"
-        >
-            <div class="text-center mt-4"></div>
-        </div>
-    </div>
-    -->
-</div>
+{/if}

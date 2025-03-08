@@ -1,13 +1,16 @@
 local updateInterval = 250
 local detectionInterval = 500
 local blinkerInterval = 500
+local batteryUpdateInterval = 10000
 local isInVehicle = false
 local lastSpeed = 0
 local carAhead = false
+local lastBatteryLevel = 75
 
 local function toggleUI(bool)
-    --SetNuiFocus(bool, bool) for debug
+    --SetNuiFocus(bool, bool) -- for debug
     SendNUIEvent(Send.visible, bool)
+    SendNUIEvent("setMenuVisible", bool)
 end
 
 RegisterNUICallback("hideUI", function()
@@ -23,14 +26,32 @@ local function getVehicleSpeed(veh)
     end
 end
 
+local function getVehicleBatteryLevel(vehicle)
+    if lastBatteryLevel > 0 and GetEntitySpeed(vehicle) > 1.0 then
+        lastBatteryLevel = math.max(0, lastBatteryLevel - math.random(0, 2) * 0.1)
+    end
+    return math.floor(lastBatteryLevel + 0.5)
+end
+
 Citizen.CreateThread(function()
     local nextBlinkerUpdate = 0
+    local nextGearUpdate = 0
     local blinkerState = 0
+    local gearState = 0
 
     while true do
         if isInVehicle then
             local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
             local curTime = GetGameTimer()
+
+            if curTime > nextGearUpdate then
+                local newGearState = GetVehicleCurrentGear(vehicle)
+                if newGearState ~= gearState then
+                    gearState = newGearState
+                    SendNUIEvent("updateGears", { GetVehicleCurrentGear(vehicle) })
+                end
+                nextGearUpdate = curTime + 200
+            end
 
             if curTime > nextBlinkerUpdate then
                 local newBlinkerState = GetVehicleIndicatorLights(vehicle)
@@ -51,6 +72,7 @@ end)
 Citizen.CreateThread(function()
     local nextSpeedUpdate = 0
     local nextDetectionUpdate = 0
+    local nextBatteryUpdate = 0
 
     while true do
         local wait = 1000
@@ -78,6 +100,12 @@ Citizen.CreateThread(function()
                 nextSpeedUpdate = currentTime + updateInterval
             end
 
+            if currentTime > nextBatteryUpdate then
+                local batteryLevel = getVehicleBatteryLevel(vehicle)
+                SendNUIEvent("updateBattery", batteryLevel)
+                nextBatteryUpdate = currentTime + batteryUpdateInterval
+            end
+
             if currentTime > nextDetectionUpdate then
                 local coords = GetEntityCoords(vehicle)
                 local forwardVector = GetEntityForwardVector(vehicle)
@@ -97,7 +125,7 @@ Citizen.CreateThread(function()
 
                 if isCarAhead ~= carAhead then
                     carAhead = isCarAhead
-                    SendNUIEvent("setVisible", carAhead)
+                    SendNUIEvent("setCarAheadVisible", carAhead)
                 end
 
                 nextDetectionUpdate = currentTime + detectionInterval

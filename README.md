@@ -1,4 +1,4 @@
-# planeklm's Tesla HUD - WIP
+![image-5](https://github.com/user-attachments/assets/af148d88-bb05-4864-a03d-7e65c01a776a)
 
 # Features
 * **Autopilot** - The vehicle will automatically drive to the chosen waypoint, with updates seen on the HUD.

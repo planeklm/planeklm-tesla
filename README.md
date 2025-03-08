@@ -6,6 +6,9 @@
 * **Time to Waypoint** - Calculates the amount of time it will take via autopilot to arrive at the waypoint.
 * **And more!**
 
+# Preview
+https://github.com/user-attachments/assets/54106fcf-ba20-44b5-9314-ac037171dfa7
+
 # Installation
 * Drag and drop `planeklm-tesla`
 * In your `server.cfg` add `ensure planeklm-tesla`
